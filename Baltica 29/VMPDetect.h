@@ -291,7 +291,7 @@ namespace vmp_improve
 		NTSTATUS nt_status = STATUS_UNSUCCESSFUL;
 		shell_code_util::shell_code shell_code;
 
-		uint8_t shell_syscall[] = 
+		uint8_t ShellSyscall[] = 
 		{
 				0xB8, 0x0, 0x0, 0x0, 0x0,   // mov eax,syscall_number
 				0x4C, 0x8B, 0xD1,           // mov r10,rcx
@@ -311,7 +311,7 @@ namespace vmp_improve
 			"VBGA",	//VBoxWddm.sys 
 
 		};
-		if (!shell_code.init_shell(shell_syscall, sizeof(shell_syscall)))
+		if (!shell_code.init_shell(ShellSyscall, sizeof(ShellSyscall)))
 		{
 			printf("Bad init shell!\n");
 			return FALSE;
