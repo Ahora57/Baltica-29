@@ -86,16 +86,23 @@ namespace vmp_improve
 	}
 
 	NO_INLINE auto single_step_check() -> bool
-	{
-#ifndef _WIN64
-
-		return FALSE;
-
-#else
+	{ 
 		uint8_t byte_step = NULL;
 		__try
 		{
+#ifdef _WIN64
 			assembly_code::single_step_cpuid();
+#else
+			__asm
+			{
+				pushfd
+				or dword ptr[esp], 0x100
+				popfd
+				cpuid
+				nop 
+			}
+#endif // _WIN64
+				 
 		}
 		__except (byte_step = *(uint8_t*)(GetExceptionInformation())->ExceptionRecord->ExceptionAddress)
 		{
@@ -105,7 +112,19 @@ namespace vmp_improve
 		
 		__try
 		{
+
+#ifdef _WIN64
 			assembly_code::single_step_rdtsc();
+#else
+			__asm
+			{
+				pushfd
+				or dword ptr[esp], 0x100
+				rdtsc
+				cpuid
+				nop
+			}
+#endif // _WIN64
 		}
 		__except (byte_step = *(uint8_t*)(GetExceptionInformation())->ExceptionRecord->ExceptionAddress)
 		{
@@ -113,8 +132,7 @@ namespace vmp_improve
 				return TRUE;
 		}
 		return FALSE;
-
-#endif // _WIN64
+		 
 	}
 	
 
@@ -153,6 +171,7 @@ namespace vmp_improve
 		shell_code_util::shell_code shell_code;
 		PSYSTEM_FIRMWARE_TABLE_INFORMATION table_info = NULL;
 
+#ifdef _WIN64
 		uint8_t ShellSyscall[] =
 		{
 			0xB8, 0x0, 0x0, 0x0, 0x0,   // mov eax,syscall_number
@@ -160,6 +179,15 @@ namespace vmp_improve
 			0x0F, 0x05,                 // syscall
 			0xC3                        // ret
 		};
+#else 
+		uint8_t ShellSyscall[] =
+		{
+			0xB8, 0x0, 0x0, 0x0, 0x0,				// mov eax,syscall_number
+			0x64, 0x8B, 0x15, 0xC0, 0x0, 0x0, 0x0,  // mov edx, dword ptr fs : [0x000000C0]
+			0xFF, 0xD2,								// call edx via call Wow64Transition
+			0xC3									// ret
+		};
+#endif // _WIN64
 
 		const CHAR* ListCorruptedString[] =
 		{
@@ -226,6 +254,7 @@ namespace vmp_improve
 		shell_code_util::shell_code shell_code;
 		PSYSTEM_FIRMWARE_TABLE_INFORMATION table_info = NULL;
 
+#ifdef _WIN64
 		uint8_t ShellSyscall[] =
 		{
 			0xB8, 0x0, 0x0, 0x0, 0x0,   // mov eax,syscall_number
@@ -233,6 +262,16 @@ namespace vmp_improve
 			0x0F, 0x05,                 // syscall
 			0xC3                        // ret
 		};
+#else 
+		uint8_t ShellSyscall[] =
+		{
+			0xB8, 0x0, 0x0, 0x0, 0x0,				// mov eax,syscall_number
+			0x64, 0x8B, 0x15, 0xC0, 0x0, 0x0, 0x0,  // mov edx, dword ptr fs : [0x000000C0]
+			0xFF, 0xD2,								// call edx via call Wow64Transition
+			0xC3									// ret
+		};
+#endif // _WIN64
+
 
 		const CHAR* ListCorruptedString[] =
 		{
@@ -291,13 +330,23 @@ namespace vmp_improve
 		NTSTATUS nt_status = STATUS_UNSUCCESSFUL;
 		shell_code_util::shell_code shell_code;
 
-		uint8_t ShellSyscall[] = 
+#ifdef _WIN64
+		uint8_t ShellSyscall[] =
 		{
-				0xB8, 0x0, 0x0, 0x0, 0x0,   // mov eax,syscall_number
-				0x4C, 0x8B, 0xD1,           // mov r10,rcx
-				0x0F, 0x05,                 // syscall
-				0xC3                        // ret
+			0xB8, 0x0, 0x0, 0x0, 0x0,   // mov eax,syscall_number
+			0x4C, 0x8B, 0xD1,           // mov r10,rcx
+			0x0F, 0x05,                 // syscall
+			0xC3                        // ret
 		};
+#else 
+		uint8_t ShellSyscall[] =
+		{
+			0xB8, 0x0, 0x0, 0x0, 0x0,				// mov eax,syscall_number
+			0x64, 0x8B, 0x15, 0xC0, 0x0, 0x0, 0x0,  // mov edx, dword ptr fs : [0x000000C0]
+			0xFF, 0xD2,								// call edx via call Wow64Transition
+			0xC3									// ret
+		};
+#endif // _WIN64
 
 		const CHAR* ListBadPool[] =
 		{
